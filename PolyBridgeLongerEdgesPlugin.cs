@@ -68,9 +68,7 @@ namespace LongerEdges
         {
             this.repositoryUrl = "https://github.com/hippolippo/longer_materials_mod/";
             mEnabled = (ConfigEntry<bool>)Config[modEnableDef];
-            this.isCheat = false;
-            //this.isEnabled = true;
-            
+            this.isCheat = true;
             PolyTechMain.registerMod(this);
             Logger.LogInfo("Longer Edges Registered.");
             CreateArcsMethod = typeof(BridgeJointMovement).GetMethod("CreateArcs", BindingFlags.NonPublic | BindingFlags.Static);
@@ -78,7 +76,9 @@ namespace LongerEdges
             PosSatisfiesAllContraintsMethod = typeof(BridgeJointMovement).GetMethod("PosSatisfiesAllContraints", BindingFlags.NonPublic | BindingFlags.Static);
             Harmony.CreateAndPatchAll(typeof(PolyBridgeLongerEdges));
             Logger.LogInfo("Longer Edges Methods Patched.");
+            Update();
             mEnabled.SettingChanged += onEnableDisable;
+            this.isEnabled = mEnabled.Value;
         }
         public void onEnableDisable(object sender, EventArgs e)
         {
@@ -96,10 +96,11 @@ namespace LongerEdges
         }
 
         void Update(){
-            if (!isCheat && usingCheatLengths() && mEnabled.Value){
+            //Logger.LogInfo($"{isCheat} {usingCheatLengths()}");
+            if (usingCheatLengths()){
                 PolyTechMain.setCheat(this, true);
             }
-            if (isCheat && !usingCheatLengths() && mEnabled.Value){
+            else {
                 PolyTechMain.setCheat(this, false);
             }
             /*if (!mEnabled.Value){
