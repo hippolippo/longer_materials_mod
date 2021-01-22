@@ -12,6 +12,7 @@ using UnityEngine;
 using System.Reflection;
 using System.Collections.Generic;
 using Vectrosity;
+using UnityEngine.UI;
 
 namespace LongerEdges
 {
@@ -36,16 +37,15 @@ namespace LongerEdges
         public ConfigDefinition modEnableDef = new ConfigDefinition(pluginVerson, "Enable/Disable Mod");
         public ConfigDefinition infiniteLengthDef = new ConfigDefinition(pluginVerson, "Infintite Material Lengths");
 
-        public static bool saveEnabled;
         public static MethodInfo CreateArcsMethod;
         public static MethodInfo PosInsideBoundaryMethod;
         public static MethodInfo PosSatisfiesAllContraintsMethod;
+        public static int MaxSelectionCircleDots = 20945;
 
         public override void enableMod(){
-            mEnabled.Value = saveEnabled;
+            mEnabled.Value = true;
         }
         public override void disableMod(){
-            saveEnabled = mEnabled.Value;
             mEnabled.Value = false;
         }
         public override string getSettings(){return "";}
@@ -69,8 +69,8 @@ namespace LongerEdges
             this.repositoryUrl = "https://github.com/hippolippo/longer_materials_mod/";
             mEnabled = (ConfigEntry<bool>)Config[modEnableDef];
             this.isCheat = false;
-            this.isEnabled = true;
-            saveEnabled = true;
+            //this.isEnabled = true;
+            
             PolyTechMain.registerMod(this);
             Logger.LogInfo("Longer Edges Registered.");
             CreateArcsMethod = typeof(BridgeJointMovement).GetMethod("CreateArcs", BindingFlags.NonPublic | BindingFlags.Static);
@@ -227,6 +227,62 @@ namespace LongerEdges
 		    	}
 		    }
 		    __result = result;
+            return false;
+        }
+        
+        [HarmonyPatch(typeof(Panel_TraceTool), "GetFillSegmentLength")]
+        [HarmonyPrefix]
+        private static bool FillRangePatch(ref Panel_TraceTool __instance ,ref float __result){
+            BridgeMaterial material = BridgeMaterials.GetMaterial(Bridge.m_BuildMaterialType);
+	        float b = Mathf.Min(4f, BridgeMaterials.GetMaxEdgeLength(material.m_MaterialType));
+	        __result = Mathf.Lerp(1f, b, Mathf.Clamp01(__instance.m_FillSlider.value / 100f));
+            return false;
+        }
+
+        [HarmonyPatch(typeof(BridgeJointPlacement), "CreateSelectionCircleDots")]
+        [HarmonyPrefix]
+        private static bool CreateSelectionCircleDotsPatch(
+            ref GameObject ___m_SelectionCircleDotsParent,
+            ref List<GameObject> ___m_SelectionCircleDots
+        ){
+            if (!mEnabled.Value) return true;
+            ___m_SelectionCircleDotsParent = new GameObject("SelectionCircleDotsParent");
+	        ___m_SelectionCircleDotsParent.hideFlags = HideFlags.HideInHierarchy;
+	        UnityEngine.Object.DontDestroyOnLoad(___m_SelectionCircleDotsParent);
+	        ___m_SelectionCircleDotsParent.SetActive(false);
+	        for (int i = 0; i < MaxSelectionCircleDots; i++)
+	        {
+	        	___m_SelectionCircleDots.Add(UnityEngine.Object.Instantiate<GameObject>(Prefabs.m_Instance.m_SelectionCircleDot));
+	        	___m_SelectionCircleDots[i].transform.parent = ___m_SelectionCircleDotsParent.transform;
+	        }
+            return false;
+        }
+
+        [HarmonyPatch(typeof(BridgeJointPlacement), "PositionSelectionCircleDots")]
+        [HarmonyPrefix]
+        private static bool PositionSelectionCircleDotsPatch(
+            float radius,
+            ref List<GameObject> ___m_SelectionCircleDots
+        ){
+            if (!mEnabled.Value) return true;
+            float num = 0.3f;
+	        float num2 = 6.28318548f * radius;
+	        float num3 = 360f * (num / num2);
+	        int num4 = Mathf.RoundToInt(360f / num3);
+	        float num5 = 0f;
+            if (num4 > MaxSelectionCircleDots){
+                return false;
+            }
+	        for (int i = 0; i < num4; i++)
+	        {
+	        	___m_SelectionCircleDots[i].SetActive(true);
+	        	___m_SelectionCircleDots[i].transform.localPosition = new Vector3(radius * Mathf.Sin(0.0174532924f * num5), radius * Mathf.Cos(0.0174532924f * num5), 0f);
+	        	num5 += num3;
+	        }
+	        for (int j = num4; j < MaxSelectionCircleDots; j++)
+	        {
+	        	___m_SelectionCircleDots[j].SetActive(false);
+	        }
             return false;
         }
     }
