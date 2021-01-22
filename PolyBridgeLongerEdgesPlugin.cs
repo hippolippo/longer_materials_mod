@@ -22,7 +22,7 @@ namespace LongerEdges
     {
         public const string pluginGuid = "polytech.longeredges";
         public const string pluginName = "Longer Material Lengths";
-        public const string pluginVerson = "0.2.1";
+        public const string pluginVerson = "1.0.0";
         public static ConfigEntry<bool> mEnabled;
         public static ConfigEntry<bool> _infiniteLength;
         public static ConfigEntry<float> _roadLen;
