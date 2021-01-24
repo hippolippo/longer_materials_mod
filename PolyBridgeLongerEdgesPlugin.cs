@@ -40,6 +40,7 @@ namespace LongerEdges
         public static MethodInfo CreateArcsMethod;
         public static MethodInfo PosInsideBoundaryMethod;
         public static MethodInfo PosSatisfiesAllContraintsMethod;
+        public static MethodInfo FindClipboardJointMatchingSourceJointMethod;
         public static int MaxSelectionCircleDots = 20945;
 
         public override void enableMod(){
@@ -74,6 +75,8 @@ namespace LongerEdges
             CreateArcsMethod = typeof(BridgeJointMovement).GetMethod("CreateArcs", BindingFlags.NonPublic | BindingFlags.Static);
             PosInsideBoundaryMethod = typeof(BridgeJointMovement).GetMethod("PosInsideBoundary", BindingFlags.NonPublic | BindingFlags.Static);
             PosSatisfiesAllContraintsMethod = typeof(BridgeJointMovement).GetMethod("PosSatisfiesAllContraints", BindingFlags.NonPublic | BindingFlags.Static);
+            FindClipboardJointMatchingSourceJointMethod = typeof(ClipboardManager).GetMethod("FindClipboardJointMatchingSourceJoint", BindingFlags.NonPublic | BindingFlags.Static);
+            
             Harmony.CreateAndPatchAll(typeof(PolyBridgeLongerEdges));
             Logger.LogInfo("Longer Edges Methods Patched.");
             Update();
@@ -284,6 +287,43 @@ namespace LongerEdges
 	        {
 	        	___m_SelectionCircleDots[j].SetActive(false);
 	        }
+            return false;
+        }
+
+        [HarmonyPatch(typeof(ClipboardManager), "MarkJointBadIfInvalidEdge")]
+        [HarmonyPrefix]
+        private static bool MarkJointBadIfInvalidEdgePatch(
+            ClipboardJoint joint, 
+            BridgeEdge connectedEdge
+        ){
+            BridgeJoint bridgeJoint = (connectedEdge.m_JointA == joint.m_SourceBridgeJoint) ? connectedEdge.m_JointB : connectedEdge.m_JointA;
+		    if (bridgeJoint)
+		    {
+		    	ClipboardJoint clipboardJoint = (ClipboardJoint)FindClipboardJointMatchingSourceJointMethod.Invoke(null, new object[] { bridgeJoint });
+		    	if (clipboardJoint)
+		    	{
+		    		Vector3 v = clipboardJoint.WillMerge() ? clipboardJoint.m_MergeBridgeJoint.transform.position : clipboardJoint.transform.position;
+		    		if (!BridgeEdges.IsValidEdgeLength(Vector2.Distance(joint.m_MergeBridgeJoint.transform.position, v), GameSettings.NodeDiameter(), BridgeMaterials.GetMaxEdgeLength(connectedEdge.m_Material.m_MaterialType)))
+		    		{
+		    			if (clipboardJoint.m_MergeBridgeJoint)
+		    			{
+		    				float num = Vector2.Distance(joint.transform.position, joint.m_MergeBridgeJoint.transform.position);
+		    				float num2 = Vector2.Distance(clipboardJoint.transform.position, clipboardJoint.m_MergeBridgeJoint.transform.position);
+		    				if (num > num2)
+		    				{
+		    					joint.SetBad();
+		    					return false;
+		    				}
+		    				clipboardJoint.SetBad();
+		    				return false;
+		    			}
+		    			else
+		    			{
+		    				joint.SetBad();
+		    			}
+		    		}
+		    	}
+		    }
             return false;
         }
     }
