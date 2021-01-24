@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using BepInEx;
 using BepInEx.Logging;
@@ -19,7 +19,7 @@ namespace LongerEdges
     {
         public const string pluginGuid = "polytech.longeredges";
         public const string pluginName = "Longer Material Lengths";
-        public const string pluginVerson = "1.0.2";
+        public const string pluginVerson = "1.0.3";
         public static ConfigEntry<bool> mEnabled;
         public static ConfigEntry<bool> _infiniteLength;
         public static ConfigEntry<float> _roadLen;
@@ -277,6 +277,7 @@ namespace LongerEdges
             ClipboardJoint joint, 
             BridgeEdge connectedEdge
         ){
+            if (!PolyTechMain.modEnabled.Value && mEnabled.Value) return true;
             BridgeJoint bridgeJoint = (connectedEdge.m_JointA == joint.m_SourceBridgeJoint) ? connectedEdge.m_JointB : connectedEdge.m_JointA;
 		    if (bridgeJoint)
 		    {
