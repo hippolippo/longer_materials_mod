@@ -1,6 +1,3 @@
-﻿// BUGS: Moving points, just moving them in general, you will see what I mean
-// The circle that the game draws around the materials is linked to materials and not the length. this somhow isn't an issue for placing but it is laggy for moving
-// also ropes don't get a circle if you set them a max length
 
 using System;
 using BepInEx;
@@ -22,7 +19,7 @@ namespace LongerEdges
     {
         public const string pluginGuid = "polytech.longeredges";
         public const string pluginName = "Longer Material Lengths";
-        public const string pluginVerson = "1.0.1";
+        public const string pluginVerson = "1.0.2";
         public static ConfigEntry<bool> mEnabled;
         public static ConfigEntry<bool> _infiniteLength;
         public static ConfigEntry<float> _roadLen;
@@ -34,6 +31,8 @@ namespace LongerEdges
         public static ConfigEntry<float> _cableLen;
         public static ConfigEntry<float> _springLen;
 
+        public static Boolean ptfEnabled = true;
+
         public ConfigDefinition modEnableDef = new ConfigDefinition(pluginVerson, "Enable/Disable Mod");
         public ConfigDefinition infiniteLengthDef = new ConfigDefinition(pluginVerson, "Infintite Material Lengths");
 
@@ -44,9 +43,11 @@ namespace LongerEdges
 
         public override void enableMod(){
             mEnabled.Value = true;
+            this.isEnabled = true;
         }
         public override void disableMod(){
             mEnabled.Value = false;
+            this.isEnabled = false;
         }
         public override string getSettings(){return "";}
         public override void setSettings(string settings){}
@@ -96,38 +97,18 @@ namespace LongerEdges
         }
 
         void Update(){
-            //Logger.LogInfo($"{isCheat} {usingCheatLengths()}");
-            if (usingCheatLengths()){
+            if (usingCheatLengths() && PolyTechMain.modEnabled.Value && mEnabled.Value){
                 PolyTechMain.setCheat(this, true);
             }
             else {
                 PolyTechMain.setCheat(this, false);
             }
-            /*if (!mEnabled.Value){
-                PolyTechMain.setCheat(this, false);
-            }*/
         }
-        /*
-        [HarmonyPatch(typeof(BridgeMaterials), "GetMaxEdgeLength")]
-        [HarmonyPrefix]
-        private static bool giveMaxLength(BridgeMaterialType materialType, ref float __result){
-            if(mEnabled.Value){
-                if (_infiniteLength.Value){
-                    Logger.LogInfo("1");
-                    __result = 1000000.0f;
-                    Logger.LogInfo("2");
-                    return false; 
-                }   
-                return true;
-            }else{
-                return true;
-            }
-        }
-        */
+
         [HarmonyPatch(typeof(BridgeMaterial), "HasUnlimitedLength")]
         [HarmonyPostfix]
         private static void HasUnlimitedLengthPatch(ref BridgeMaterial __instance, ref bool __result){
-            if(mEnabled.Value){
+            if(PolyTechMain.modEnabled.Value && mEnabled.Value){
                 
                 if (__instance.m_MaterialType == BridgeMaterialType.ROAD) __result = _roadLen.Value >= 1000;
                 if (__instance.m_MaterialType == BridgeMaterialType.REINFORCED_ROAD) __result = _reinforcedRoadLen.Value >= 1000;
@@ -145,7 +126,7 @@ namespace LongerEdges
         [HarmonyPatch(typeof(BridgeMaterials), "GetMaxEdgeLength")]
         [HarmonyPostfix]
         private static void giveMaxLength(BridgeMaterialType materialType, ref float __result){
-            if(mEnabled.Value){
+            if(PolyTechMain.modEnabled.Value && mEnabled.Value){
                 if (materialType == BridgeMaterialType.ROAD && _roadLen.Value != (float)_roadLen.DefaultValue) __result = _roadLen.Value;
                 if (materialType == BridgeMaterialType.REINFORCED_ROAD && _reinforcedRoadLen.Value != (float)_reinforcedRoadLen.DefaultValue) __result = _reinforcedRoadLen.Value;
                 if (materialType == BridgeMaterialType.WOOD && _woodLen.Value != (float)_woodLen.DefaultValue) __result = _woodLen.Value;
@@ -246,7 +227,7 @@ namespace LongerEdges
             ref GameObject ___m_SelectionCircleDotsParent,
             ref List<GameObject> ___m_SelectionCircleDots
         ){
-            if (!mEnabled.Value) return true;
+            if (!PolyTechMain.modEnabled.Value && mEnabled.Value) return true;
             ___m_SelectionCircleDotsParent = new GameObject("SelectionCircleDotsParent");
 	        ___m_SelectionCircleDotsParent.hideFlags = HideFlags.HideInHierarchy;
 	        UnityEngine.Object.DontDestroyOnLoad(___m_SelectionCircleDotsParent);
@@ -265,7 +246,7 @@ namespace LongerEdges
             float radius,
             ref List<GameObject> ___m_SelectionCircleDots
         ){
-            if (!mEnabled.Value) return true;
+            if (!PolyTechMain.modEnabled.Value && mEnabled.Value) return true;
             float num = 0.3f;
 	        float num2 = 6.28318548f * radius;
 	        float num3 = 360f * (num / num2);
