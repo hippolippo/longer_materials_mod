@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>LongerEdges</RootNamespace>
+    <RootNamespace>BetterReplays</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="BepInEx">
