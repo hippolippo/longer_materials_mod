@@ -9,7 +9,6 @@ using UnityEngine;
 using System.Reflection;
 using System.Collections.Generic;
 using Vectrosity;
-using UnityEngine.UI;
 
 namespace LongerEdges
 {
@@ -19,7 +18,7 @@ namespace LongerEdges
     {
         public const string pluginGuid = "polytech.longeredges";
         public const string pluginName = "Longer Material Lengths";
-        public const string pluginVerson = "1.0.3";
+        public const string pluginVerson = "1.1.0";
         public static ConfigEntry<bool> mEnabled;
         public static ConfigEntry<bool> _infiniteLength;
         public static ConfigEntry<float> _roadLen;
